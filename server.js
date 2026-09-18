@@ -36,7 +36,6 @@ const SPREADS = JSON.parse(fs.readFileSync(path.join(__dirname, 'spreads.json'),
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-js
 const app = express();
 
 // ALLOWED_ORIGIN can be a single origin or a comma-separated list, e.g.
