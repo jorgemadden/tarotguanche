@@ -1,0 +1,42 @@
+{
+  "1": {
+    "name_es": "Una carta",
+    "name_en": "Single card",
+    "positions_es": ["La carta del día / la respuesta directa"],
+    "positions_en": ["Card of the day / direct answer"]
+  },
+  "3": {
+    "name_es": "Tirada de tres cartas",
+    "name_en": "Three-card spread",
+    "positions_es": ["Pasado / raíz de la situación", "Presente / energía actual", "Futuro / hacia dónde se dirige"],
+    "positions_en": ["Past / root of the situation", "Present / current energy", "Future / where it's heading"]
+  },
+  "10": {
+    "name_es": "Cruz Celta",
+    "name_en": "Celtic Cross",
+    "positions_es": [
+      "Situación actual",
+      "Desafío u obstáculo inmediato",
+      "Base / raíz del asunto (pasado lejano)",
+      "Pasado reciente",
+      "Mejor resultado posible / lo que corona la situación",
+      "Futuro inmediato",
+      "Cómo se percibe la persona a sí misma",
+      "Influencias externas / el entorno",
+      "Esperanzas y miedos",
+      "Resultado final"
+    ],
+    "positions_en": [
+      "Present situation",
+      "Immediate challenge or obstacle",
+      "Foundation / root of the matter (distant past)",
+      "Recent past",
+      "Best possible outcome / what crowns the situation",
+      "Near future",
+      "How the person sees themselves",
+      "External influences / environment",
+      "Hopes and fears",
+      "Final outcome"
+    ]
+  }
+}
