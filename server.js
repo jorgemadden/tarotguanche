@@ -36,24 +36,25 @@ const SPREADS = JSON.parse(fs.readFileSync(path.join(__dirname, 'spreads.json'),
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+js
 const app = express();
-app.use(cors({ origin: process.env.ALLOWED_ORIGIN || '*' }));
-app.use(express.json({ limit: '12mb' })); // photos as base64 need headroom
 
-// Basic abuse protection — tune to your traffic. This alone won't stop
-// a determined abuser; put real infra (Cloudflare etc.) in front in production.
-app.use('/api/', rateLimit({ windowMs: 15 * 60 * 1000, max: 30 }));
+// ALLOWED_ORIGIN can be a single origin or a comma-separated list, e.g.
+// "https://tarotguanche.com,https://www.tarotguanche.com"
+const allowedOrigins = (process.env.ALLOWED_ORIGIN || '*')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
 
-// ---------------------------------------------------------------
-// Fuzzy matching: printed card name (from photo OCR) -> real card
-// ---------------------------------------------------------------
-function normalize(s) {
-  return (s || '')
-    .toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // strip accents
-    .replace(/[^a-z0-9\s/]/g, '')
-    .trim();
-}
+app.use(cors({
+  origin: allowedOrigins.includes('*')
+    ? '*'
+    : function (origin, callback) {
+        // allow no-origin requests (curl, health checks) and any listed origin
+        if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+        return callback(new Error('Not allowed by CORS'));
+      }
+}));
 
 function levenshtein(a, b) {
   const m = a.length, n = b.length;
