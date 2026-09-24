@@ -68,8 +68,12 @@ app.use('/api/', rateLimit({ windowMs: 15 * 60 * 1000, max: 30 }));
 // fuzzy string match is kept only as a safety-net fallback for the
 // rare case the model returns a raw_text with no matched_id.
 // ---------------------------------------------------------------
+// Includes each card's classic tarot equivalence (Spanish and English) so
+// the AI can match someone who names the card by its familiar tarot name
+// ("the sun", "el ermitaño", "ace of wands") instead of, or alongside, its
+// Guanche name — this is the ONLY thing that changed here from before.
 const CARD_LIST_FOR_PROMPT = CARDS
-  .map(c => `${c.id}: ${c.nombre}`)
+  .map(c => `${c.id}: ${c.nombre} (classic tarot: ${c.equivalencia}${c.equivalencia_en ? ' / ' + c.equivalencia_en : ''})`)
   .join('\n');
 
 function normalize(s) {
@@ -105,7 +109,11 @@ function similarity(a, b) {
 function fuzzyFallback(rawText) {
   let best = null, bestScore = 0;
   for (const card of CARDS) {
-    const aliases = card.nombre.split('/').map(s => s.trim()).concat([card.nombre]);
+    const aliases = card.nombre.split('/').map(s => s.trim()).concat([
+      card.nombre,
+      card.equivalencia,
+      card.equivalencia_en
+    ]).filter(Boolean);
     for (const alias of aliases) {
       const score = similarity(rawText, alias);
       if (score > bestScore) { bestScore = score; best = card; }
@@ -137,7 +145,7 @@ ${CARD_LIST_FOR_PROMPT}
 
 Your job: look at a photo of one or more physical tarot cards laid out on a surface and report, for each card you can see:
 - its position in reading order (left to right, top to bottom, as a human would naturally read the layout; number from 1)
-- matched_id: the id of the closest matching card from the list above, even if the printed text is partially obscured, blurry, or you're not 100% sure — pick your best match. Use null only if you truly cannot connect it to anything on the list.
+- matched_id: the id of the closest matching card from the list above, even if the printed text is partially obscured, blurry, or you're not 100% sure — pick your best match. Some cards are printed with a double name (Guanche name plus its classic tarot equivalent, e.g. "El Hombre de Asteheyta — El Ermitaño"); match on either half. Use null only if you truly cannot connect it to anything on the list.
 - raw_text: the text you actually read on the card, as a backup in case your match is wrong
 - whether the card's text is upright or upside-down in the photo (orientation: "reversed" if upside-down, otherwise "upright")
 
@@ -180,7 +188,7 @@ ${CARD_LIST_FOR_PROMPT}
 
 Your job: for each card the user mentions, in the order they mention them, find:
 - position: number the cards sequentially from 1, in the order they appear in the user's text — REGARDLESS of whether the user gave their own numbers/labels. If the user wrote their own numbers, ignore those and just use writing order.
-- matched_id: the id of the closest matching card from the list above. The user will rarely type the exact printed name — they may abbreviate, misspell, translate loosely, use only part of the name, or describe it ("el rey de espadas", "la del pastor"). Use your best judgment to match to the closest real card. Use null only if nothing on the list is plausibly what they meant.
+- matched_id: the id of the closest matching card from the list above. The user will rarely type the exact printed name — they may abbreviate, misspell, translate loosely, use only part of the name, or describe it ("el rey de espadas", "la del pastor"). They may also refer to a card ONLY by its classic tarot name instead of its Guanche name — e.g. "the sun" or "el sol" means Magec, "the moon"/"la luna" means Moneiba, "the tower"/"la torre" means Idafe, "the hermit"/"el ermitaño" means El Hombre de Asteheyta, "ace of wands"/"as de bastos" means the As de Banotes — match these exactly as confidently as the Guanche name itself, using the "classic tarot" equivalence shown for each card in the list. If they write both names together (e.g. "Hombre de Asteheyta - Ermitaño"), that's still just one card. Use your best judgment to match to the closest real card. Use null only if nothing on the list is plausibly what they meant.
 - raw_text: what the user actually wrote, as a backup in case your match is wrong
 - orientation: "reversed" ONLY if the user explicitly said that card was reversed/upside-down/invertida/al revés. If they said nothing about orientation for a card, default to "upright" — never guess "reversed" without an explicit signal.
 
