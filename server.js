@@ -143,11 +143,23 @@ async function identifySpread(imageBase64, mediaType) {
 
 ${CARD_LIST_FOR_PROMPT}
 
-Your job: look at a photo of one or more physical tarot cards laid out on a surface and report, for each card you can see:
-- its position in reading order (left to right, top to bottom, as a human would naturally read the layout; number from 1)
-- matched_id: the id of the closest matching card from the list above, even if the printed text is partially obscured, blurry, or you're not 100% sure — pick your best match. Some cards are printed with a double name (Guanche name plus its classic tarot equivalent, e.g. "El Hombre de Asteheyta — El Ermitaño"); match on either half. Use null only if you truly cannot connect it to anything on the list.
+Your job: look at a photo of one or more physical tarot cards laid out on a surface — which may be a simple row, or a real layout with cards overlapping, crossing each other, or rotated — and report every card you can find.
+
+READING THE LAYOUT — spreads are not always a simple row. Two patterns to specifically watch for:
+
+1. CROSSED / OVERLAPPING CARDS: a card lying diagonally or at 90° on top of another card (most often near the center) is the classic "Celtic Cross" crossing position, not a mistake or stray card. Both the underlying card AND the crossing card are real, separate cards — report both, even though one partially covers the other. Use whatever portion of each card's artwork, border pattern, or text is still visible to identify it; a card does not need to be fully visible to be identified. If you can only make out a fragment, still give your best-guess matched_id rather than skipping the card.
+
+2. THE CLASSIC 10-CARD CELTIC CROSS PATTERN: if the photo shows roughly this arrangement — two cards crossed at the center, four more cards forming a loose compass around that pair (one below, one above/crowning, one to the left, one to the right), and a vertical line of four further cards off to one side — treat it as a Celtic Cross and order positions accordingly (this exact order matters, it maps to fixed meanings downstream): 1 = the upright central card (underneath), 2 = the card laid crosswise over it, 3 = BELOW the cross (foundation/distant past), 4 = to the LEFT (recent past), 5 = ABOVE/crowning the cross (best possible outcome), 6 = to the RIGHT (near future), 7–10 = the vertical line/staff, read bottom to top. If the photo doesn't clearly match this pattern (wrong count, no crossing pair, etc.), fall back to plain reading order instead (left to right, top to bottom) — don't force cards into Celtic Cross positions they don't actually occupy.
+
+ROTATION vs. REVERSED — these are different things and must not be confused:
+- A card can be physically rotated in the photo (commonly 90°, as with the crossing card above) simply because of how it was laid down. Rotation by itself does NOT mean reversed.
+- "reversed" means the card's own artwork/text is upside-down relative to ITS OWN normal reading direction — imagine turning your head (or the card) so the card's own top is up: if the image/text is then upside-down, it's reversed; if it reads normally, it's upright. Judge this independently for every card, including ones rotated 90° sideways in the photo — a sideways card can still be either upright or reversed along its own axis.
+
+For each card found, report:
+- position: order as described above (Celtic Cross order if that pattern applies, otherwise plain reading order), numbered from 1
+- matched_id: the id of the closest matching card from the list above, even if the printed text is partially obscured, blurry, overlapped by another card, or you're not 100% sure — pick your best match. Some cards are printed with a double name (Guanche name plus its classic tarot equivalent, e.g. "El Hombre de Asteheyta — El Ermitaño"); match on either half. Use null only if you truly cannot connect it to anything on the list.
 - raw_text: the text you actually read on the card, as a backup in case your match is wrong
-- whether the card's text is upright or upside-down in the photo (orientation: "reversed" if upside-down, otherwise "upright")
+- orientation: "reversed" or "upright", judged along the card's own axis as described above
 
 Respond with STRICT JSON ONLY — no prose, no markdown fences, no explanation. Format:
 [{"position": 1, "matched_id": "mayor-0", "raw_text": "...", "orientation": "upright" | "reversed"}, ...]
@@ -156,14 +168,14 @@ If you cannot see any cards clearly, respond with: []
 Do not attempt to interpret meanings. Do not answer any other kind of question about the image. This is a pure detection task.`;
 
   const resp = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 1024,
+    model: 'claude-sonnet-5',
+    max_tokens: 1536,
     system,
     messages: [{
       role: 'user',
       content: [
         { type: 'image', source: { type: 'base64', media_type: mediaType, data: imageBase64 } },
-        { type: 'text', text: 'Detect every card in this photo and return the JSON described in your instructions.' }
+        { type: 'text', text: 'Detect every card in this photo — including any crossed/overlapping or rotated cards — and return the JSON described in your instructions.' }
       ]
     }]
   });
@@ -217,20 +229,95 @@ If the text is too confusing, rambling, unrelated to laying out tarot cards, or 
 }
 
 // ---------------------------------------------------------------
+// Named-spread detection: several spreads share the same card count
+// (e.g. Amor, Pareja, Trabajo and Decisiones are all 5 cards), so a pure
+// count-based lookup can't tell them apart. If the person names their
+// spread — in their typed description or their optional question/theme —
+// this does a simple, deterministic keyword match (no extra AI call) and
+// returns the matching key in SPREADS, which takes priority over the
+// count-based fallback.
+// ---------------------------------------------------------------
+// Each list mixes two kinds of phrases: the spread's own name ("tirada del
+// amor"), and natural things a person would actually say in their question/
+// theme field without naming any spread at all ("mi pareja", "mi ex", "debería
+// dejar mi trabajo"). Both should route to the same position set. Matching is
+// a plain substring check (see detectNamedSpread below), so keep entries as
+// short, distinctive phrases — a single common word like "trabajo" alone is
+// deliberately NOT included on its own, to avoid false positives from a word
+// that could appear in an unrelated question.
+const NAMED_SPREAD_ALIASES = {
+  amor: [
+    'tirada del amor', 'tirada de amor', 'love spread',
+    'mi vida amorosa', 'el amor', 'encontrar el amor', 'encontrar pareja',
+    'mi ex pareja', 'mi ex novio', 'mi ex novia', 'mi ex-pareja', 'cerrar este ciclo de amor',
+    'estoy soltero', 'estoy soltera', 'busco pareja', 'busco el amor', 'my love life', 'finding love'
+  ],
+  pareja: [
+    'tirada de pareja', 'tirada en pareja', 'couple spread',
+    'mi pareja', 'mi relación de pareja', 'nuestra relación', 'mi matrimonio',
+    'mi novio', 'mi novia', 'mi marido', 'mi esposa', 'mi prometido', 'mi prometida',
+    'my relationship', 'my partner', 'my marriage'
+  ],
+  trabajo: [
+    'tirada del trabajo', 'tirada de trabajo', 'tirada laboral', 'work spread',
+    'mi trabajo', 'mi empleo', 'mi carrera', 'mi situación laboral', 'mi situación profesional',
+    'cambiar de trabajo', 'cambio de trabajo', 'mi jefe', 'mi jefa', 'mi empresa',
+    'my job', 'my career', 'my work situation'
+  ],
+  decisiones: [
+    'tirada de decisiones', 'toma de decisiones', 'decision spread',
+    'entre dos opciones', 'entre dos caminos', 'opción a', 'opcion a', 'option a',
+    'no sé qué elegir', 'no se qué elegir', 'tengo que decidir', 'qué camino tomar', 'que camino tomar',
+    'i need to decide', 'which path should i'
+  ],
+  semanal: ['tirada semanal', 'weekly spread'],
+  mensual: ['tirada mensual', 'monthly spread'],
+  sombra: [
+    'tirada de la sombra', 'trabajo de sombra', 'carta de sombra', 'shadow spread',
+    'mi lado oscuro', 'mi sombra', 'lo que reprimo', 'autoconocimiento profundo',
+    'my shadow', 'my dark side'
+  ],
+  proposito: [
+    'propósito de vida', 'proposito de vida', 'tirada del propósito', 'tirada del proposito',
+    'life purpose', 'purpose spread', 'mi propósito', 'mi proposito', 'mi misión de vida',
+    'mi mision de vida', 'para qué estoy aquí', 'para que estoy aqui', 'sentido de mi vida',
+    'my purpose', 'my calling'
+  ],
+  arbol_vida: ['árbol de la vida', 'arbol de la vida', 'tree of life'],
+  '13': ['tirada anual', 'carta del año', 'carta del ano', 'yearly spread'],
+  '21': ['tirada gitana', 'grand spread'],
+  '12': ['rueda del año', 'rueda del ano', 'wheel of the year'],
+  '10': ['cruz celta', 'celtic cross'],
+  '7': ['herradura', 'horseshoe'],
+  '5': ['cinco elementos', 'los cinco elementos', 'five elements'],
+  '4': ['cruz simple', 'simple cross']
+};
+
+function detectNamedSpread(...texts) {
+  const hay = texts.filter(Boolean).join(' ').toLowerCase();
+  for (const [slug, aliases] of Object.entries(NAMED_SPREAD_ALIASES)) {
+    if (aliases.some(a => hay.includes(a))) return slug;
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------
 // STEP 2 — text: write the interpretation from VALIDATED data only
 // ---------------------------------------------------------------
-async function writeInterpretation(matchedCards, lang, userQuestion) {
+async function writeInterpretation(matchedCards, lang, userQuestion, namedSpreadSlug) {
   const isEs = lang !== 'en';
-  const spreadInfo = SPREADS[String(matchedCards.length)];
+  const spreadInfo = (namedSpreadSlug && SPREADS[namedSpreadSlug]) || SPREADS[String(matchedCards.length)];
 
   const cardLines = matchedCards.map((m, idx) => {
     const c = m.card;
     const meaning = m.orientation === 'reversed'
       ? (isEs ? c.abajo : (c.abajo_en || c.abajo))
       : (isEs ? c.arriba : (c.arriba_en || c.arriba));
-    const posLabel = spreadInfo
-      ? (isEs ? spreadInfo.positions_es[idx] : spreadInfo.positions_en[idx])
-      : (isEs ? `Carta ${idx + 1} de ${matchedCards.length}` : `Card ${idx + 1} of ${matchedCards.length}`);
+    // Bounds-checked: a named spread's position list might be shorter or
+    // longer than the actual number of cards drawn, so fall back to a
+    // generic label for any index it doesn't cover.
+    const namedLabel = spreadInfo && (isEs ? spreadInfo.positions_es[idx] : spreadInfo.positions_en[idx]);
+    const posLabel = namedLabel || (isEs ? `Carta ${idx + 1} de ${matchedCards.length}` : `Card ${idx + 1} of ${matchedCards.length}`);
     return `${idx + 1}. [${posLabel}] "${c.nombre}" — ${m.orientation === 'reversed' ? (isEs ? 'invertida' : 'reversed') : (isEs ? 'derecha' : 'upright')}\n   ${isEs ? 'Energía' : 'Energy'}: ${meaning}`;
   }).join('\n\n');
 
@@ -329,7 +416,8 @@ app.post('/api/interpret-reading', async (req, res) => {
       return res.status(200).json({ ok: false, reason: 'no_cards_matched', unmatched });
     }
 
-    const interpretation = await writeInterpretation(matched, lang, safeQuestion);
+    const namedSpreadSlug = detectNamedSpread(mode === 'text' ? textSpread : '', safeQuestion);
+    const interpretation = await writeInterpretation(matched, lang, safeQuestion, namedSpreadSlug);
 
     return res.status(200).json({
       ok: true,

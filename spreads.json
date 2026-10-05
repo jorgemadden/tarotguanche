@@ -11,6 +11,36 @@
     "positions_es": ["Pasado / raíz de la situación", "Presente / energía actual", "Futuro / hacia dónde se dirige"],
     "positions_en": ["Past / root of the situation", "Present / current energy", "Future / where it's heading"]
   },
+  "4": {
+    "name_es": "Cruz simple",
+    "name_en": "Simple cross",
+    "positions_es": ["La situación / el tema central", "El desafío u obstáculo", "El consejo / qué hacer", "El resultado probable"],
+    "positions_en": ["The situation / core matter", "The challenge or obstacle", "The advice / what to do", "The likely outcome"]
+  },
+  "5": {
+    "name_es": "Los cinco elementos",
+    "name_en": "The five elements",
+    "positions_es": [
+      "Tierra — el cuerpo, lo material, el sustento",
+      "Agua — la emoción, el vínculo, lo que sientes",
+      "Fuego — la voluntad, la acción, el impulso",
+      "Aire — el pensamiento, la verdad, la claridad",
+      "El centro — el espíritu, la síntesis de todo lo anterior"
+    ],
+    "positions_en": [
+      "Earth — the body, the material, sustenance",
+      "Water — emotion, bonds, what you feel",
+      "Fire — will, action, drive",
+      "Air — thought, truth, clarity",
+      "The center — spirit, the synthesis of everything above"
+    ]
+  },
+  "7": {
+    "name_es": "Herradura",
+    "name_en": "Horseshoe",
+    "positions_es": ["Pasado", "Presente", "Factores ocultos / lo que no se ve", "Obstáculos", "Influencias externas / el entorno", "Actitud recomendada / consejo", "Resultado final"],
+    "positions_en": ["Past", "Present", "Hidden factors / what isn't visible", "Obstacles", "External influences / environment", "Recommended attitude / advice", "Final outcome"]
+  },
   "10": {
     "name_es": "Cruz Celta",
     "name_en": "Celtic Cross",
@@ -37,6 +67,108 @@
       "External influences / environment",
       "Hopes and fears",
       "Final outcome"
+    ]
+  },
+  "12": {
+    "name_es": "Rueda del año (12 meses)",
+    "name_en": "Wheel of the year (12 months)",
+    "positions_es": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
+    "positions_en": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+  },
+  "13": {
+    "name_es": "Tirada anual",
+    "name_en": "Yearly spread",
+    "positions_es": ["La energía general del año", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
+    "positions_en": ["The year's overall energy", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+  },
+  "21": {
+    "name_es": "Tirada gitana",
+    "name_en": "Gypsy spread",
+    "positions_es": [
+      "Tú mismo (pasado)", "Hogar y familia (pasado)", "Trabajo y vocación (pasado)", "Amor y vínculos (pasado)", "Salud y cuerpo (pasado)", "Finanzas y recursos (pasado)", "Espíritu y propósito (pasado)",
+      "Tú mismo (presente)", "Hogar y familia (presente)", "Trabajo y vocación (presente)", "Amor y vínculos (presente)", "Salud y cuerpo (presente)", "Finanzas y recursos (presente)", "Espíritu y propósito (presente)",
+      "Tú mismo (futuro)", "Hogar y familia (futuro)", "Trabajo y vocación (futuro)", "Amor y vínculos (futuro)", "Salud y cuerpo (futuro)", "Finanzas y recursos (futuro)", "Espíritu y propósito (futuro)"
+    ],
+    "positions_en": [
+      "Yourself (past)", "Home and family (past)", "Work and vocation (past)", "Love and bonds (past)", "Health and body (past)", "Finances and resources (past)", "Spirit and purpose (past)",
+      "Yourself (present)", "Home and family (present)", "Work and vocation (present)", "Love and bonds (present)", "Health and body (present)", "Finances and resources (present)", "Spirit and purpose (present)",
+      "Yourself (future)", "Home and family (future)", "Work and vocation (future)", "Love and bonds (future)", "Health and body (future)", "Finances and resources (future)", "Spirit and purpose (future)"
+    ]
+  },
+  "amor": {
+    "name_es": "Tirada del amor",
+    "name_en": "Love spread",
+    "positions_es": ["Tu situación emocional actual", "Lo que buscas en el amor", "Obstáculos o bloqueos", "Qué puedes hacer", "Resultado potencial"],
+    "positions_en": ["Your current emotional situation", "What you're seeking in love", "Obstacles or blocks", "What you can do", "Potential outcome"]
+  },
+  "pareja": {
+    "name_es": "Tirada de pareja",
+    "name_en": "Couple spread",
+    "positions_es": ["Tú en la relación", "Tu pareja en la relación", "La base de la relación", "Desafíos actuales", "Lo que necesita la relación", "Hacia dónde va"],
+    "positions_en": ["You in the relationship", "Your partner in the relationship", "The relationship's foundation", "Current challenges", "What the relationship needs", "Where it's heading"]
+  },
+  "trabajo": {
+    "name_es": "Tirada del trabajo",
+    "name_en": "Work spread",
+    "positions_es": ["Tu situación laboral actual", "Fortalezas que tienes", "Obstáculos a superar", "Acción recomendada", "Resultado si actúas"],
+    "positions_en": ["Your current work situation", "Strengths you have", "Obstacles to overcome", "Recommended action", "Outcome if you act"]
+  },
+  "decisiones": {
+    "name_es": "Tirada de decisiones",
+    "name_en": "Decision spread",
+    "positions_es": ["Opción A — su naturaleza", "Hacia dónde lleva la opción A", "Opción B — su naturaleza", "Hacia dónde lleva la opción B", "El consejo del tarot"],
+    "positions_en": ["Option A — its nature", "Where option A leads", "Option B — its nature", "Where option B leads", "The tarot's advice"]
+  },
+  "semanal": {
+    "name_es": "Tirada semanal",
+    "name_en": "Weekly spread",
+    "positions_es": ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"],
+    "positions_en": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+  },
+  "mensual": {
+    "name_es": "Tirada mensual",
+    "name_en": "Monthly spread",
+    "positions_es": ["Semana 1", "Semana 2", "Semana 3", "Semana 4", "El mensaje general del mes"],
+    "positions_en": ["Week 1", "Week 2", "Week 3", "Week 4", "The month's overall message"]
+  },
+  "sombra": {
+    "name_es": "Tirada de la sombra",
+    "name_en": "Shadow spread",
+    "positions_es": ["Lo que reprimes", "Por qué lo reprimes", "Cómo se manifiesta en tu vida", "Qué te está enseñando esa sombra", "Cómo integrarla con compasión"],
+    "positions_en": ["What you repress", "Why you repress it", "How it shows up in your life", "What that shadow is teaching you", "How to integrate it with compassion"]
+  },
+  "proposito": {
+    "name_es": "Tirada del propósito de vida",
+    "name_en": "Life purpose spread",
+    "positions_es": ["Tus dones naturales", "Tu propósito o misión", "Qué te bloquea para vivirlo", "Cómo alinearte con él", "El siguiente paso"],
+    "positions_en": ["Your natural gifts", "Your purpose or mission", "What's blocking you from living it", "How to align with it", "The next step"]
+  },
+  "arbol_vida": {
+    "name_es": "Árbol de la vida",
+    "name_en": "Tree of Life",
+    "positions_es": [
+      "Lo divino / el origen de todo (Keter)",
+      "La sabiduría / el impulso creativo (Jojmá)",
+      "El entendimiento / la forma que toma (Biná)",
+      "La expansión / la generosidad (Jésed)",
+      "La disciplina / los límites necesarios (Guevurá)",
+      "El equilibrio / tu verdadero centro (Tiféret)",
+      "La pasión / el deseo (Nétsaj)",
+      "La comunicación / el intelecto (Hod)",
+      "El fundamento / tu subconsciente (Yesod)",
+      "Lo material / cómo se manifiesta todo esto en tu vida (Maljut)"
+    ],
+    "positions_en": [
+      "The divine / the origin of everything (Keter)",
+      "Wisdom / the creative impulse (Chokmah)",
+      "Understanding / the form it takes (Binah)",
+      "Expansion / generosity (Chesed)",
+      "Discipline / necessary limits (Gevurah)",
+      "Balance / your true center (Tiferet)",
+      "Passion / desire (Netzach)",
+      "Communication / intellect (Hod)",
+      "Foundation / your subconscious (Yesod)",
+      "The material / how all this manifests in your life (Malkuth)"
     ]
   }
 }
