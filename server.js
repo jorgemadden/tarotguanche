@@ -161,15 +161,17 @@ For each card found, report:
 - raw_text: the text you actually read on the card, as a backup in case your match is wrong
 - orientation: "reversed" or "upright", judged along the card's own axis as described above
 
-Respond with STRICT JSON ONLY — no prose, no markdown fences, no explanation. Format:
+Photos commonly show anywhere from 1 to 20+ cards — a crowded photo with many cards is normal, not a reason to give up. Work through it card by card; do not skip cards or stop early because there are a lot of them.
+
+Respond with STRICT JSON ONLY: your entire reply must be nothing but the JSON array itself — the first character you output must be [ and the last must be ]. No introductory sentence, no markdown fences, no caveats or commentary before or after it, even if you're uncertain about some cards (express uncertainty via matched_id: null on that one card instead, never via prose). Format:
 [{"position": 1, "matched_id": "mayor-0", "raw_text": "...", "orientation": "upright" | "reversed"}, ...]
 
-If you cannot see any cards clearly, respond with: []
+Only respond with [] if the photo genuinely shows no tarot cards at all (e.g. it's blank, or of something else entirely) — not merely because the layout is complex or some cards are hard to read.
 Do not attempt to interpret meanings. Do not answer any other kind of question about the image. This is a pure detection task.`;
 
   const resp = await anthropic.messages.create({
     model: 'claude-sonnet-5',
-    max_tokens: 1536,
+    max_tokens: 3000,
     system,
     messages: [{
       role: 'user',
@@ -181,13 +183,47 @@ Do not attempt to interpret meanings. Do not answer any other kind of question a
   });
 
   const raw = resp.content.map(b => b.type === 'text' ? b.text : '').join('').trim();
-  const jsonMatch = raw.match(/\[[\s\S]*\]/);
-  if (!jsonMatch) return [];
-  try {
-    return JSON.parse(jsonMatch[0]);
-  } catch (e) {
-    return [];
+  return parseCardJsonArray(raw, resp.stop_reason, 'photo');
+}
+
+// Parses the model's card-detection output defensively. A well-formed
+// response is just a JSON array, but if the model adds any preamble, gets
+// truncated (stop_reason: 'max_tokens'), or the array doesn't close cleanly,
+// a strict regex-match-then-JSON.parse fails and silently returns zero cards
+// with no way to tell why. This logs exactly what happened (visible in
+// Render's logs) and falls back to extracting individual {...} objects —
+// each parsed on its own — so a partially-truncated list still yields
+// whatever cards it did manage to describe, instead of nothing at all.
+function parseCardJsonArray(raw, stopReason, sourceLabel) {
+  const arrayMatch = raw.match(/\[[\s\S]*\]/);
+  if (arrayMatch) {
+    try {
+      const parsed = JSON.parse(arrayMatch[0]);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) {
+      console.warn(`[${sourceLabel}] full-array JSON.parse failed (${e.message}); trying object-by-object fallback`);
+    }
+  } else {
+    console.warn(`[${sourceLabel}] no [...] array found in model output`);
   }
+
+  // Fallback: pull out individual {...} objects and parse each on its own —
+  // recovers everything up to the truncation point instead of nothing.
+  const objectMatches = raw.match(/\{[^{}]*\}/g) || [];
+  const recovered = [];
+  for (const chunk of objectMatches) {
+    try {
+      const obj = JSON.parse(chunk);
+      if (obj && typeof obj === 'object') recovered.push(obj);
+    } catch (e) { /* skip this one, keep the rest */ }
+  }
+
+  if (!recovered.length) {
+    console.warn(`[${sourceLabel}] zero cards recovered. stop_reason=${stopReason}. raw output (first 1500 chars):\n${raw.slice(0, 1500)}`);
+  } else {
+    console.warn(`[${sourceLabel}] recovered ${recovered.length} card(s) via object-by-object fallback (stop_reason=${stopReason})`);
+  }
+  return recovered;
 }
 
 // ---------------------------------------------------------------
@@ -213,19 +249,13 @@ If the text is too confusing, rambling, unrelated to laying out tarot cards, or 
 
   const resp = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 1024,
+    max_tokens: 1536,
     system,
     messages: [{ role: 'user', content: `<user_text>\n${userText}\n</user_text>\n\nExtract the cards as instructed.` }]
   });
 
   const raw = resp.content.map(b => b.type === 'text' ? b.text : '').join('').trim();
-  const jsonMatch = raw.match(/\[[\s\S]*\]/);
-  if (!jsonMatch) return [];
-  try {
-    return JSON.parse(jsonMatch[0]);
-  } catch (e) {
-    return [];
-  }
+  return parseCardJsonArray(raw, resp.stop_reason, 'text');
 }
 
 // ---------------------------------------------------------------
