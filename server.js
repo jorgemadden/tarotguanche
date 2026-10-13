@@ -40,19 +40,41 @@ const app = express();
 
 // ALLOWED_ORIGIN can be a single origin or a comma-separated list, e.g.
 // "https://tarotguanche.com,https://www.tarotguanche.com"
-const allowedOrigins = (process.env.ALLOWED_ORIGIN || '*')
+//
+// We match by HOSTNAME only (ignoring http/https and a leading "www."),
+// rather than requiring the browser's Origin header to match one of these
+// strings character-for-character. A strict string match is brittle in
+// practice — if the site is ever reachable over plain http:// for even one
+// request (a stray non-HTTPS link, a misconfigured redirect at the host),
+// or if only the www. or only the bare domain is listed, every request
+// from the "wrong" variant gets silently rejected with a generic network
+// error on the frontend, which is exactly what happened here. Matching
+// the hostname is just as safe (an attacker can't spoof the Origin header
+// to a hostname they don't control from a browser context) and far more
+// forgiving of exactly this kind of mismatch.
+function hostnameOf(originOrUrl) {
+  try { return new URL(originOrUrl).hostname.replace(/^www\./, '').toLowerCase(); }
+  catch (e) { return null; }
+}
+const allowedHosts = (process.env.ALLOWED_ORIGIN || '*')
   .split(',')
   .map(s => s.trim())
   .filter(Boolean);
+const allowAll = allowedHosts.includes('*');
+const allowedHostnames = allowAll ? [] : allowedHosts.map(hostnameOf).filter(Boolean);
 
 app.use(cors({
-  origin: allowedOrigins.includes('*')
-    ? '*'
-    : function (origin, callback) {
-        // allow no-origin requests (curl, health checks) and any listed origin
-        if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-        return callback(new Error('Not allowed by CORS'));
-      }
+  origin: function (origin, callback) {
+    if (allowAll) return callback(null, true);
+    // allow no-origin requests (curl, health checks, server-to-server)
+    if (!origin) return callback(null, true);
+    const hostname = hostnameOf(origin);
+    if (hostname && allowedHostnames.includes(hostname)) return callback(null, true);
+    // Logged so a future mismatch shows up immediately in Render's logs
+    // instead of requiring a manual dig through them, as this one did.
+    console.warn(`[CORS] rejected origin "${origin}" (hostname "${hostname}") — allowed: ${allowedHostnames.join(', ') || '(none configured)'}`);
+    return callback(new Error('Not allowed by CORS'));
+  }
 }));
 app.use(express.json({ limit: '12mb' })); // photos as base64 need headroom
 
